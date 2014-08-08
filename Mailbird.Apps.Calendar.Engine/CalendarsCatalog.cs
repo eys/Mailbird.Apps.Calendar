@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mailbird.Apps.Calendar.Engine.Interfaces;
 using Mailbird.Apps.Calendar.Engine.Metadata;
+using Mailbird.Apps.Calendar.Engine.Responses;
 
 namespace Mailbird.Apps.Calendar.Engine
 {
@@ -23,38 +24,38 @@ namespace Mailbird.Apps.Calendar.Engine
 
         public IEnumerable<ICalendarProvider> GetProviders
         {
-            get { return _calendarProviders.Values; }
-        }
-
-        public IEnumerable<Metadata.Calendar> GetCalendars()
-        {
-            foreach (var calendarProvider in _calendarProviders.Values)
+            get
             {
-                foreach (var calendar in calendarProvider.GetCalendars())
-                {
-                    yield return calendar;
-                }
+                return _calendarProviders.Values;
             }
         }
 
-        public IEnumerable<Appointment> GetCalendarAppointments()
+        public void GetCalendarAppointments()
         {
-            return _calendarProviders.Values.SelectMany(calendarProvider => calendarProvider.GetAppointments());
+            foreach (ICalendarProvider calendarProvider in _calendarProviders.Values)
+            {
+                calendarProvider.GetAppointments();
+            }
         }
 
-        public bool InsertAppointment(Appointment appointment)
+        public void InsertAppointment(Appointment appointment)
         {
-            return _calendarProviders[appointment.Calendar.Provider].InsertAppointment(appointment);
+            var provider = _calendarProviders[appointment.Calendar.Provider];
+
+            provider.InsertAppointment(appointment);
         }
 
         public bool UpdateAppointment(Appointment appointment)
         {
-            return _calendarProviders[appointment.Calendar.Provider].UpdateAppointment(appointment);
+            ICalendarProvider provider = _calendarProviders[appointment.Calendar.Provider];
+            return provider.UpdateAppointment(appointment);
         }
 
-        public bool RemoveAppointment(Appointment appointment)
+        public bool RemoveAppointment(object appointmentId, Metadata.Calendar calendar)
         {
-            return _calendarProviders[appointment.Calendar.Provider].RemoveAppointment(appointment);
+            var provider = _calendarProviders[calendar.Provider];
+            return provider.RemoveAppointment(appointmentId, calendar.CalendarId);
         }
+
     }
 }

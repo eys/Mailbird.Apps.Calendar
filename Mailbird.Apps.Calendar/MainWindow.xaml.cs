@@ -61,7 +61,7 @@ namespace Mailbird.Apps.Calendar
         {
             foreach (DevExpress.XtraScheduler.Appointment obj in e.Objects)
             {
-                ViewModel.RemoveAppointment(obj.Id);
+                ViewModel.RemoveAppointment(obj.Id, obj.CustomFields["cfCalendar"] as Engine.Metadata.Calendar);
             }
         }
     }

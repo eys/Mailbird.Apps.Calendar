@@ -1,28 +1,35 @@
-﻿﻿using System.Collections.ObjectModel;
-﻿using DevExpress.Mvvm.POCO;
+﻿#region References
+using System.Collections.Generic;
+﻿using System.Collections.ObjectModel;
+﻿using System.Runtime.InteropServices;
+﻿using System.Windows;
+using System.Windows.Threading;
+using DevExpress.Mvvm;
 ﻿using DevExpress.Xpf.Scheduler;
 ﻿using Mailbird.Apps.Calendar.Engine;
- ﻿using System;
-using System.Collections.Generic;
+using System;
 ﻿using System.Linq;
 ﻿using DevExpress.Xpf.Core.Native;
+﻿using Mailbird.Apps.Calendar.Engine.CalendarProviders;
 ﻿using Mailbird.Apps.Calendar.Engine.Interfaces;
 ﻿using Mailbird.Apps.Calendar.Engine.Metadata;
+﻿using Mailbird.Apps.Calendar.Engine.Responses;
 ﻿using Mailbird.Apps.Calendar.Infrastructure;
-
+﻿using ViewModelBase = Mailbird.Apps.Calendar.Infrastructure.ViewModelBase;
+#endregion
 namespace Mailbird.Apps.Calendar.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ViewModelBase, IDisposable
     {
         #region PrivateProps
-
-        private readonly Dictionary<object, Appointment> _appointments = new Dictionary<object, Appointment>();
 
         private readonly CalendarsCatalog _calendarsCatalog = new CalendarsCatalog();
 
         private readonly ObservableCollection<TreeData> _treeData = new ObservableCollection<TreeData>();
 
-        #endregion PrivateProps
+        private readonly DispatcherTimer timer;
+
+        #endregion
 
         #region PublicProps
 
@@ -39,67 +46,191 @@ namespace Mailbird.Apps.Calendar.ViewModels
 
         public MainWindowViewModel()
         {
-            AppointmentCollection = new ObservableCollection<Appointment>(_calendarsCatalog.GetCalendarAppointments());
+            Messenger.Default.Register<GetAppointmentsCompleteResult>(this, OnGetAppointmentsComplete);
+            Messenger.Default.Register<GetCalendarsCompleteResult>(this, OnGetCalendarsComplete);
+            Messenger.Default.Register<InsertAppointmentCompleteResult>(this, OnInsertAppointmentComplete);
+            Messenger.Default.Register<UpdateAppointmentCompleteResult>(this, OnUpdateAppointmentComplete);
+            Messenger.Default.Register<AppointmentDeleteCompleteResult>(this, OnAppointmentDeleteComplete);
+
             foreach (var provider in _calendarsCatalog.GetProviders)
             {
                 AddElementToTree(provider);
-                foreach (var calendar in provider.GetCalendars())
-                {
-                    AddElementToTree(calendar);
-                }
-            }
-            var appointmentList = _calendarsCatalog.GetCalendarAppointments().ToList();
-            AppointmentCollection = new ObservableCollection<Appointment>(appointmentList);
-
-            foreach (var a in appointmentList)
-            {
-                // Make sure we don't get any duplicates
-                if (!_appointments.ContainsKey(a.Id))
-                    _appointments.Add(a.Id, a);
+                provider.GetCalendars();
             }
 
-            var calendars = _calendarsCatalog.GetCalendars();
-
-            calendars.ToArray();
+            AppointmentCollection = new ObservableCollection<Appointment>();
 
             FlyoutViewModel = new FlyoutViewModel
             {
                 AddAppointmentAction = AddAppointment,
                 UpdateAppointmentAction = UpdateAppointment,
-                RemoveAppointmentAction = RemoveAppointment
+                RemoveAppointmentAction = (appointmentId, calendarId) => RemoveAppointment(appointmentId, calendarId)
             };
+
+            timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMinutes(1);
+            timer.Tick += OnTimerTick;
+
+            timer.Start();
+        }
+
+        private void OnAppointmentDeleteComplete(AppointmentDeleteCompleteResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+            if (msg.Success)
+            {
+                var temp = new Appointment[AppointmentCollection.Count];
+
+                AppointmentCollection.CopyTo(temp, 0);
+                foreach (
+                    Appointment appointmentToRemove in temp.Where(t => t.Id.ToString() == msg.AppointmentId.ToString()))
+                {
+                    Application.Current.Dispatcher.BeginInvoke(
+                        (Action)(() => AppointmentCollection.Remove(appointmentToRemove)));
+                }
+            }
+            else
+            {
+                MessageBoxHelper.ShowError("Error remove appointment. Details : " + msg.Error, "Error",
+                    MessageBoxButton.OK);
+            }
+        }
+
+        private void OnUpdateAppointmentComplete(UpdateAppointmentCompleteResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+            if (msg.Success)
+            {
+                Application.Current.Dispatcher.BeginInvoke(
+                    (Action)(() =>
+                    {
+                        for (var i = 0; i < AppointmentCollection.Count; i++)
+                        {
+                            if (AppointmentCollection[i].Id == msg.Appointment.Id)
+                            {
+                                AppointmentCollection[i] = msg.Appointment;
+                                break;
+                            }
+                        }
+                    }));
+            }
+            else
+            {
+                MessageBoxHelper.ShowError("Error updating appointment. Details : " + msg.Error, "Error",
+                    MessageBoxButton.OK);
+            }
+        }
+
+        private void OnInsertAppointmentComplete(InsertAppointmentCompleteResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+            if (msg.Success)
+            {
+                Application.Current.Dispatcher.BeginInvoke(
+                    (Action)(() => AppointmentCollection.Add(msg.Appointment)));
+            }
+            else
+            {
+                MessageBoxHelper.ShowError("Error creating appointment. Details : " + msg.Error, "Error",
+                    MessageBoxButton.OK);
+            }
+        }
+
+        private void OnGetCalendarsComplete(GetCalendarsCompleteResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+
+            if (msg.Success)
+            {
+                foreach (var calendar in msg.Calendars)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(
+                        (Action)(() =>
+                        {
+                            AddElementToTree(calendar);
+                        }));
+                }
+            }
+            else
+            {
+                MessageBoxHelper.ShowError("Error cGetCalendars. Details : " + msg.Error, "Error",
+                    MessageBoxButton.OK);
+            }
+        }
+
+        private void OnGetAppointmentsComplete(GetAppointmentsCompleteResult msg)
+        {
+            if (msg.Appointments != null)
+            {
+                foreach (var appointment in msg.Appointments)
+                {
+                    if (!AppointmentCollection.Contains(appointment))
+                    {
+                        Appointment item = appointment;
+                        Application.Current.Dispatcher.BeginInvoke(
+                        (Action)(() =>
+                        {
+                            AppointmentCollection.Add(item);
+                        }));
+                    }
+                    else
+                    {
+
+                        for (int i = 0; i < AppointmentCollection.Count; i++)
+                        {
+                            var temp = AppointmentCollection[i];
+                            if (temp.Id == appointment.Id)
+                            {
+                                temp = appointment;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public void AddAppointment(Appointment appointment)
         {
-            AppointmentCollection.Add(appointment);
-            if (appointment.Id == null || _appointments.ContainsKey(appointment.Id))
+            if (appointment.Id == null )
                 appointment.Id = Guid.NewGuid();
             if (appointment.Calendar == null)
                 appointment.Calendar = _calendarsCatalog.DefaultCalendar;
-            _appointments.Add(appointment.Id, appointment);
+            
             _calendarsCatalog.InsertAppointment(appointment);
         }
 
+
+
         public void UpdateAppointment(object appointmentId, Appointment appointment)
         {
-            var appointmentToUpdate = _appointments[appointmentId];
-            AppointmentCollection.Remove(appointmentToUpdate);
-            AppointmentCollection.Add(appointment);
-            _appointments[appointmentId] = appointment;
             _calendarsCatalog.UpdateAppointment(appointment);
         }
 
-        public void RemoveAppointment(object appintmentId)
+        
+        public void RemoveAppointment(object appointmentId, Engine.Metadata.Calendar calendar)
         {
-            AppointmentCollection.Remove(_appointments[appintmentId]);
-            _calendarsCatalog.RemoveAppointment(_appointments[appintmentId]);
-            _appointments.Remove(appintmentId);
+            _calendarsCatalog.RemoveAppointment(appointmentId, calendar);
         }
+
 
         public void AppointmentOnViewChanged(Appointment appointment)
         {
             var app = AppointmentCollection.First(f => f.Id.ToString() == appointment.Id.ToString());
+            //Set missed fields
             appointment.ReminderInfo = app.ReminderInfo;
             appointment.Calendar = app.Calendar;
             UpdateAppointment(appointment.Id, appointment);
@@ -117,14 +248,14 @@ namespace Mailbird.Apps.Calendar.ViewModels
                     ParentID = "0"
                 });
             }
-            if (element is Mailbird.Apps.Calendar.Engine.Metadata.Calendar)
+            if (element is Engine.Metadata.Calendar)
             {
                 TreeData.Add(new TreeData
                 {
                     DataType = TreeDataType.Calendar,
                     Data = element,
-                    Name = (element as Mailbird.Apps.Calendar.Engine.Metadata.Calendar).Name,
-                    ParentID = (element as Mailbird.Apps.Calendar.Engine.Metadata.Calendar).Provider
+                    Name = (element as Engine.Metadata.Calendar).Name,
+                    ParentID = (element as Engine.Metadata.Calendar).Provider
                 });
             }
         }
@@ -146,6 +277,22 @@ namespace Mailbird.Apps.Calendar.ViewModels
             {
                 FlyoutViewModel.IsOpen = false;
             }
+        }
+
+        public void Dispose()
+        {
+            timer.Tick -= OnTimerTick;
+        }
+
+        private void OnTimerTick(object sender, EventArgs e)
+        {
+            AppointmentCollection.Clear();
+            foreach (var provider in _calendarsCatalog.GetProviders)
+            {
+                AddElementToTree(provider);
+                provider.GetAppointments();
+            }
+            Console.WriteLine("Reload!");
         }
     }
 }

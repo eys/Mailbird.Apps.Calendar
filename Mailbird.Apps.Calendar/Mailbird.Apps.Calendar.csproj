@@ -179,6 +179,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Controls\" />
     <Folder Include="UIResources\Icons\" />
   </ItemGroup>
   <ItemGroup>

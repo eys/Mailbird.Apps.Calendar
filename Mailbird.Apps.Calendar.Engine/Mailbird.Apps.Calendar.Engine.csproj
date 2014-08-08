@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DevExpress.Mvvm.v14.1, Version=14.1.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="Google.Apis, Version=1.8.2.23762, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Google.Apis.1.8.2\lib\net40\Google.Apis.dll</HintPath>
@@ -123,6 +124,14 @@
     <Compile Include="Metadata\Appointment.cs" />
     <Compile Include="Metadata\Calendar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Responses\AppDomainAssemblyTypeScanner.cs" />
+    <Compile Include="Responses\AppointmentCompleteResult.cs" />
+    <Compile Include="Responses\AppointmentDeleteCompleteResult.cs" />
+    <Compile Include="Responses\BaseResult.cs" />
+    <Compile Include="Responses\GetAppointmentsCompleteResult.cs" />
+    <Compile Include="Responses\GetCalendarsCompleteResult.cs" />
+    <Compile Include="Responses\InsertAppointmentCompleteResult.cs" />
+    <Compile Include="Responses\UpdateAppointmentCompleteResult.cs" />
     <Compile Include="Utility\JsonWorker.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -14,7 +14,7 @@ namespace Mailbird.Apps.Calendar.ViewModels
 {
     public class FlyoutViewModel : Infrastructure.ViewModelBase
     {
-        private const string DefaultTimeValue = "01/01/0001 12:00:00 PM";
+        private const string DefaultTimeValue = "01.01.0001 12:00:00 PM";
 
         #region Bindable members
 
@@ -48,7 +48,7 @@ namespace Mailbird.Apps.Calendar.ViewModels
 
         private TreeData _selectedTreeItem;
 
-        private Mailbird.Apps.Calendar.Engine.Metadata.Calendar _selectedCalendar;
+        private Engine.Metadata.Calendar _selectedCalendar;
 
         private KeyValuePair<int, string> _selectedReminder;
 
@@ -90,39 +90,44 @@ namespace Mailbird.Apps.Calendar.ViewModels
             IsOpen = false;
             if (CurrentAppointmentId != null)
             {
-                var appointment = new Mailbird.Apps.Calendar.Engine.Metadata.Appointment
+                var appointment = new Engine.Metadata.Appointment();
+                appointment.Id = CurrentAppointmentId;
+                appointment.Subject = Subject;
+                appointment.Location = Location;
+                if (AllDayEvent)
                 {
-                    Id = CurrentAppointmentId,
-                    Subject = Subject,
-                    Location = Location,
-                    StartTime = StartDate.Date + (AllDayEvent ? DateTime.Parse(DefaultTimeValue).TimeOfDay : DateTime.Parse(StartTime).TimeOfDay),
-                    EndTime = EndDate.Date + (AllDayEvent ? DateTime.Parse(DefaultTimeValue).TimeOfDay : DateTime.Parse(EndTime).TimeOfDay),
-                    AllDayEvent = AllDayEvent,
-                    LabelId = LabelId,
-                    Description = Description,
-                    StatusId = StatusId,
-                    //ResourceId = ResourceId,
-                    Calendar = SelectedCalendar
-                };
+                    appointment.StartTime = DateTime.Parse(StartDate.Date.ToShortDateString());
+                    appointment.EndTime = DateTime.Parse(EndDate.Date.ToShortDateString());
+                    //appointment.StartTime = StartDate.Date + (AllDayEvent ? DateTime.MinValue.TimeOfDay : StartDate.TimeOfDay);
+                    //appointment.EndTime = EndDate.Date + (AllDayEvent ? DateTime.MinValue.TimeOfDay : EndDate.TimeOfDay);
+                }
+                else
+                {
+                    appointment.StartTime = StartDate;
+                    appointment.EndTime = EndDate;
+                }
+                
+                appointment.AllDayEvent = AllDayEvent;
+                appointment.LabelId = LabelId;
+                appointment.Description = Description;
+                appointment.StatusId = StatusId;
+                appointment.Calendar = SelectedCalendar;
                 appointment.ReminderInfo = GetReminderInfo(appointment);
                 UpdateAppointmentAction(CurrentAppointmentId, appointment);
             }
             else
             {
-                var appointment = new Mailbird.Apps.Calendar.Engine.Metadata.Appointment
-                {
-                    Id = Guid.NewGuid(),
-                    Subject = Subject,
-                    Location = Location,
-                    StartTime = StartDate.Date + (AllDayEvent ? DateTime.Parse(DefaultTimeValue).TimeOfDay : DateTime.Parse(StartTime).TimeOfDay),
-                    EndTime = EndDate.Date + (AllDayEvent ? DateTime.Parse(DefaultTimeValue).TimeOfDay : DateTime.Parse(EndTime).TimeOfDay),
-                    AllDayEvent = AllDayEvent,
-                    LabelId = LabelId,
-                    Description = Description,
-                    StatusId = StatusId,
-                    //ResourceId = ResourceId,
-                    Calendar = SelectedCalendar
-                };
+                var appointment = new Engine.Metadata.Appointment();
+                appointment.Id = Guid.NewGuid();
+                appointment.Subject = Subject;
+                appointment.Location = Location;
+                appointment.StartTime = StartDate.Date + (AllDayEvent ? DateTime.MinValue.TimeOfDay : StartDate.TimeOfDay);
+                appointment.EndTime = EndDate.Date + (AllDayEvent ? DateTime.MinValue.TimeOfDay : EndDate.TimeOfDay);
+                appointment.AllDayEvent = AllDayEvent;
+                appointment.LabelId = LabelId;
+                appointment.Description = Description;
+                appointment.StatusId = StatusId;
+                appointment.Calendar = SelectedCalendar;
                 appointment.ReminderInfo = GetReminderInfo(appointment);
                 AddAppointmentAction(appointment);
             }
@@ -148,22 +153,13 @@ namespace Mailbird.Apps.Calendar.ViewModels
             set { if (SetValue(ref _startDateTime, value, () => StartDate)) EndDateValidation(); }
         }
 
-        public string StartTime
-        {
-            get { return _startTime ?? DefaultTimeValue; }
-            set { if (SetValue(ref _startTime, value, () => StartTime)) EndDateValidation(); }
-        }
-
         public DateTime EndDate
         {
             get { return _endDate; }
-            set { if (SetValue(ref _endDate, value, () => EndDate)) EndDateValidation(); }
-        }
-
-        public string EndTime
-        {
-            get { return _endTime ?? DefaultTimeValue; }
-            set { if (SetValue(ref _endTime, value, () => EndTime)) EndDateValidation(); }
+            set
+            {
+                if (SetValue(ref _endDate, value, () => EndDate)) EndDateValidation();
+            }
         }
 
         public bool AllDayEvent
@@ -238,6 +234,10 @@ namespace Mailbird.Apps.Calendar.ViewModels
             get { return _selectedCalendar ?? new Mailbird.Apps.Calendar.Engine.Metadata.Calendar() { CalendarId = Guid.NewGuid().ToString(), Provider = "LocalCalendarsStorage", Name = "LocalCalendar" }; }
             set
             {
+                if (value == null)
+                {
+                    return;
+                }
                 if (SetValue(ref _selectedCalendar, value, () => SelectedCalendar))
                     _selectedTreeItem = new TreeData
                     {
@@ -256,11 +256,11 @@ namespace Mailbird.Apps.Calendar.ViewModels
 
         #region Public Properties
 
-        public Action<Mailbird.Apps.Calendar.Engine.Metadata.Appointment> AddAppointmentAction { get; set; }
+        public Action<Engine.Metadata.Appointment> AddAppointmentAction { get; set; }
 
-        public Action<object, Mailbird.Apps.Calendar.Engine.Metadata.Appointment> UpdateAppointmentAction { get; set; }
+        public Action<object, Engine.Metadata.Appointment> UpdateAppointmentAction { get; set; }
 
-        public Action<object> RemoveAppointmentAction { get; set; }
+        public Action<object, Engine.Metadata.Calendar> RemoveAppointmentAction { get; set; }
 
         public DateTime SelectedStartDateTime { get; set; }
 
@@ -293,10 +293,8 @@ namespace Mailbird.Apps.Calendar.ViewModels
                 AllDayEvent = false;
                 Description = null;
                 //Resolve date time to format that is used on view
-                StartDate = DateTime.ParseExact(SelectedStartDateTime.ToString("MM-dd-yyyy HH:mm:ss"), "MM-dd-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date;
-                EndDate = DateTime.ParseExact(SelectedStartDateTime.ToString("MM-dd-yyyy HH:mm:ss"), "MM-dd-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date;
-                StartTime = SelectedStartDateTime.TimeOfDay.ToString();
-                EndTime = SelectedStartDateTime.TimeOfDay.ToString();
+                StartDate = SelectedStartDateTime;
+                EndDate = SelectedStartDateTime;
                 SelectedReminder= ReminderCollection[0];
                 CurrentAppointmentId = null;
             }
@@ -310,15 +308,6 @@ namespace Mailbird.Apps.Calendar.ViewModels
                 RaisePropertyChanged(()=>EndDate);
             }
 
-            if (StartDate.Date == EndDate.Date)
-            {
-                if (DateTime.Parse(StartTime).TimeOfDay > DateTime.Parse(EndTime).TimeOfDay)
-                {
-                    _endTime = StartTime;
-                    RaisePropertyChanged(()=>EndTime);
-                }
-            }
-
             AllDayEventValidation();
         }
 
@@ -327,28 +316,17 @@ namespace Mailbird.Apps.Calendar.ViewModels
             if (!AllDayEvent) return;
 
             _startTime = DefaultTimeValue;
-            RaisePropertyChanged(() => StartTime);
             
             _endTime = DefaultTimeValue;
-            RaisePropertyChanged(() => EndTime);
             
             if (Math.Abs((EndDate - StartDate).TotalDays) < 1)
             {
                 _endDate = EndDate.AddDays(1);
                 RaisePropertyChanged(() => EndDate);
             }
-
-            if ((int)Math.Abs((EndDate - StartDate).TotalDays) == 1)
-            {
-                if (DateTime.Parse(StartTime).TimeOfDay > DateTime.Parse(EndTime).TimeOfDay)
-                {
-                    _endTime = StartTime;
-                    RaisePropertyChanged(() => EndTime);
-                }
-            }
         }
 
-        private string GetReminderInfo(Mailbird.Apps.Calendar.Engine.Metadata.Appointment appointment)
+        private string GetReminderInfo(Engine.Metadata.Appointment appointment)
         {
             if (SelectedReminder.Key != 0)
             {
@@ -368,10 +346,8 @@ namespace Mailbird.Apps.Calendar.ViewModels
             CurrentAppointmentId = appointment.Id;
             Subject = appointment.Subject;
             Location = appointment.Location;
-            StartDate = appointment.Start.Date;
-            StartTime = appointment.Start.ToString("MM-dd-yyyy HH:mm:ss");
-            EndDate = appointment.End.Date;
-            EndTime = appointment.End.ToString("MM-dd-yyyy HH:mm:ss");
+            StartDate = appointment.Start;
+            EndDate = appointment.End;
             LabelId = appointment.LabelId;
             ResourceId = appointment.ResourceId;
             StatusId = appointment.StatusId;
@@ -402,10 +378,8 @@ namespace Mailbird.Apps.Calendar.ViewModels
 
             return Subject != _appointment.Subject
                        || Location != _appointment.Location
-                       || StartDate.Date != _appointment.Start.Date
-                       || EndDate.Date != _appointment.End.Date
-                       || StartTime != (AllDayEvent ? DefaultTimeValue :_appointment.Start.ToString("MM-dd-yyyy HH:mm:ss"))
-                       || EndTime != (AllDayEvent ? DefaultTimeValue :_appointment.End.ToString("MM-dd-yyyy HH:mm:ss"))
+                       || StartDate != _appointment.Start
+                       || EndDate != _appointment.End
                        || AllDayEvent != _appointment.AllDay
                        || LabelId != _appointment.LabelId
                        || StatusId != _appointment.StatusId

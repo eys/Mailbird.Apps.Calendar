@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Mailbird.Apps.Calendar.Engine.CalendarProviders;
 using Mailbird.Apps.Calendar.Engine.Metadata;
 
 namespace Mailbird.Apps.Calendar.Engine.Interfaces
@@ -9,25 +10,19 @@ namespace Mailbird.Apps.Calendar.Engine.Interfaces
     public interface ICalendarProvider
     {
         string Name { get; }
+        
 
         /// <summary>
         /// return all calendars of the provider
         /// </summary>
         /// <returns></returns>
-        IEnumerable<Metadata.Calendar> GetCalendars();
+        void GetCalendars();
 
         /// <summary>
         /// return all apppointments of the provider
         /// </summary>
         /// <returns></returns>
-        IEnumerable<Appointment> GetAppointments();
-
-        /// <summary>
-        /// return all appopintments of the provider and particular calendar
-        /// </summary>
-        /// <param name="calendarId">calendar uniq identifier</param>
-        /// <returns></returns>
-        IEnumerable<Appointment> GetAppointments(string calendarId);
+        void GetAppointments();
 
 
         /// <summary>
@@ -35,7 +30,7 @@ namespace Mailbird.Apps.Calendar.Engine.Interfaces
         /// </summary>
         /// <param name="appointment">appointment to insert</param>
         /// <returns></returns>
-        bool InsertAppointment(Appointment appointment);
+        void InsertAppointment(Appointment appointment);
 
         /// <summary>
         /// upadte existed appointment
@@ -47,8 +42,9 @@ namespace Mailbird.Apps.Calendar.Engine.Interfaces
         /// <summary>
         /// remove appointment
         /// </summary>
-        /// <param name="appointment">appointment to remove</param>
+        /// <param name="appointmentId">appointment to remove</param>
+        /// <param name="calendarId"></param>
         /// <returns></returns>
-        bool RemoveAppointment(Appointment appointment);
+        bool RemoveAppointment(object appointmentId, object calendarId);
     }
 }

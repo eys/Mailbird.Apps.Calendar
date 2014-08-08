@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using DevExpress.Mvvm;
 using Mailbird.Apps.Calendar.Engine.Interfaces;
 using Mailbird.Apps.Calendar.Engine.Metadata;
+using Mailbird.Apps.Calendar.Engine.Responses;
 using Mailbird.Apps.Calendar.Engine.Utility;
 
 namespace Mailbird.Apps.Calendar.Engine.CalendarProviders
 {
     public class LocalCalendarProvider : ICalendarProvider
     {
+
+
         private const string LocalStoragePath = @"C:\LocalStorage2.txt";
 
         private readonly List<Metadata.Calendar> _calendars = new List<Metadata.Calendar>();
@@ -32,31 +36,29 @@ namespace Mailbird.Apps.Calendar.Engine.CalendarProviders
             _worker.GetData<Appointment>().ForEach(f => _calendarsEvents.Add(f));
         }
 
-        public IEnumerable<Metadata.Calendar> GetCalendars()
+        public void GetCalendars()
         {
-            return _calendars;
+            var getCalendarsCompleteResult = new GetCalendarsCompleteResult();
+            getCalendarsCompleteResult.Calendars = _calendars;
+            Messenger.Default.Send(getCalendarsCompleteResult);
         }
 
-        public IEnumerable<Appointment> GetAppointments()
+        public void GetAppointments()
         {
-            return _calendarsEvents;
+            var getAppointmentsCompleteResult = new GetAppointmentsCompleteResult();
+            getAppointmentsCompleteResult.Appointments = _calendarsEvents;
+            Messenger.Default.Send(getAppointmentsCompleteResult);
         }
 
-        public IEnumerable<Appointment> GetCalendarEvents(string calendarId)
-        {
-            return _calendarsEvents;
-        }
 
-        public IEnumerable<Appointment> GetAppointments(string empty)
+        public void InsertAppointment(Appointment appointment)
         {
-            return _calendarsEvents;
-        }
+            var baseResult = new AppointmentCompleteResult(appointment);
 
-        public bool InsertAppointment(Appointment appointment)
-        {
             _calendarsEvents.Add(appointment);
             _worker.SaveData(appointment);
-            return true;
+
+            Messenger.Default.Send(baseResult);
         }
 
         public bool UpdateAppointment(Appointment appointment)
@@ -64,9 +66,10 @@ namespace Mailbird.Apps.Calendar.Engine.CalendarProviders
             return true;
         }
 
-        public bool RemoveAppointment(Appointment appointment)
+        public bool RemoveAppointment(object appointmentId, object calendarId)
         {
             return true;
         }
+
     }
 }

@@ -14,9 +14,7 @@
     <Style x:Key="TimeEditorStyle" 
            TargetType="dxe:TextEdit"
            BasedOn="{StaticResource TextEditStyle}">
-        <Setter Property="MaskType" 
-                Value="DateTime"/>
-        
+       
         <Setter Property="Mask"
                 Value="t"/>
         
@@ -24,9 +22,6 @@
                 Value="True" />
         
         <Setter Property="NullText"
-                Value="12:00 AM"/>
-        
-        <Setter Property="EditValue" 
                 Value="12:00 AM"/>
         
         <Setter Property="ShowError"

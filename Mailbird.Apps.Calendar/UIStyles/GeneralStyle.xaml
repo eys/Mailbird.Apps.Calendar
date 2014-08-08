@@ -5,7 +5,7 @@
                     xmlns:drawing="http://schemas.devexpress.com/winfx/2008/xaml/scheduler/internal">
     
     <converters:ListItemToViewTypeConverter x:Key="ListItemToViewTypeConverter"/>
-    
+
     <converters:InvertBoolValueConverter x:Key="InvertBoolValueConverter"/>
     
     <converters:ColorToRGBStringConverter x:Key="ToRgbStringConverter"/>
@@ -153,7 +153,8 @@
     </Style>
     
     <drawing:TimeSpanToDateTimeConverter x:Key="TimeSpanToDateTimeConverter"/>
-    
+
+    <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
     <drawing:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
     
     <Style x:Key="LabelStyle" 

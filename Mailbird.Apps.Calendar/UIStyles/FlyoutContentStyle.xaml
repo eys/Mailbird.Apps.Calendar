@@ -242,17 +242,22 @@
                                     
                                     <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <dxe:DateEdit Margin="0,2,4,2"
                                               Grid.Column="0" 
-                                              EditValue="{Binding StartDate, Mode=TwoWay}" 
+                                              DateTime="{Binding StartDate, Mode=TwoWay}" 
+                                              ShowWeekNumbers="True"
                                               Style="{StaticResource DateEditStyle}"/>
+
                                 
-                                <dxe:TextEdit Margin="0,2,4,2"
+                                <dxe:DateEdit Margin="0,2,4,2"
                                               Grid.Column="1" 
-                                              Text="{Binding StartTime, Mode=TwoWay}"  
-                                              Style="{StaticResource TimeEditorStyle}"
-                                              IsEnabled="{Binding ElementName=ChkAllDay, Path=IsChecked, Converter={StaticResource InvertedBoolConverter}}"/>
+                                              DateTime="{Binding StartDate}" 
+                                              PopupContentTemplate="{x:Null}"
+                                              IsEnabled="{Binding ElementName=ChkAllDay, Path=IsChecked, Converter={StaticResource InvertedBoolConverter}}"
+                                              Style="{StaticResource TimeEditorStyle}"/>
+                                
+                                
                                 
                                 <dxe:CheckEdit Name="ChkAllDay" 
                                                Grid.Column="2" 
@@ -276,13 +281,21 @@
                                 <dxe:DateEdit Margin="0,2,4,2" 
                                               Grid.Column="0"
                                               EditValue="{Binding EndDate, Mode=TwoWay}" 
+                                              ShowWeekNumbers="True"
                                               Style="{StaticResource DateEditStyle}"/>
-                                
-                                <dxe:TextEdit Margin="0,2,4,2" 
+
+                                <dxe:DateEdit Margin="0,2,4,2"
                                               Grid.Column="1" 
-                                              Text="{Binding EndTime, Mode=TwoWay}"  
+                                              DateTime="{Binding EndDate}" 
+                                              PopupContentTemplate="{x:Null}"
+                                              IsEnabled="{Binding ElementName=ChkAllDay, Path=IsChecked, Converter={StaticResource InvertedBoolConverter}}"
+                                              Style="{StaticResource TimeEditorStyle}"/>
+
+                                <!--<dxe:TextEdit Margin="0,2,4,2" 
+                                              Grid.Column="1" 
+                                              Text="{Binding EndDate, Mode=TwoWay, StringFormat={}{0:HH:mm}}"  
                                               Style="{StaticResource TimeEditorStyle}"
-                                              IsEnabled="{Binding ElementName=ChkAllDay, Path=IsChecked, Converter={StaticResource InvertedBoolConverter}}"/>
+                                              IsEnabled="{Binding ElementName=ChkAllDay, Path=IsChecked, Converter={StaticResource InvertedBoolConverter}}"/>-->
                             </Grid>
                             
                             <dxsch:ResourcesComboBoxControl Grid.Row="8"
