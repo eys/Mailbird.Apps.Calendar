@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-C:\Users\Bodekaer\GitHub\Mailbird.Apps.Calendar\Mailbird.Apps.Calendar\obj\Debug\
+D:\Mailbird.Apps.Calendar\Mailbird.Apps.Calendar\obj\Debug\
 Mailbird.Apps.Calendar
 none
 false
 DEBUG;TRACE
-C:\Users\Bodekaer\GitHub\Mailbird.Apps.Calendar\Mailbird.Apps.Calendar\App.xaml
+D:\Mailbird.Apps.Calendar\Mailbird.Apps.Calendar\App.xaml
 61162177086
 
-16-2100969422
-30-2129655313
+16175712867
+30868926727
 MainWindow.xaml;UIStyles\AppointmetStyle.xaml;UIStyles\EditorStyles.xaml;UIStyles\FlyoutContentStyle.xaml;UIStyles\SchedulerContentStyle.xaml;UIStyles\GeneralStyle.xaml;
 
 False
